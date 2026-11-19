@@ -1,17 +1,23 @@
-// Leonida Legend — GTA VI trophy guide, entrypoint (Node 22, standard library only).
+// Leonida Legend — GTA VI Trophy Guide & Tracker (gta6-trophy-guide-01).
 //
-// The guide itself is plain static files under app/ (index.html, app.js, style.css
-// and data/trophies.json), written to open in a desktop browser and work offline:
-// nothing is fetched from the network at runtime. This program hands the guide in
-// for grading: it copies app/ and screenshots/ beside this file into the output
-// directory and writes dossier.json there, using make.fun's vendored dossier
-// library (vendor/makefun-frontend.ts, copied from the kit unchanged — do not edit
-// it, or the scorer's byte-for-byte dossier check will fail).
+// Entrypoint. The guide itself is plain static files in app/ (an HTML page,
+// a script, a stylesheet and the trophy data) plus screenshots/ of it
+// running. This file hands both folders to the output directory and writes
+// output dossier.json with the vendored make.fun frontend library, which is
+// the summary the judge reads. vendor/makefun-frontend.ts is left exactly
+// as the kit shipped it.
 //
-// Run it locally with:
+// Outside the grader, MAKEFUN_OUTPUT_DIR stands in for the output
+// directory:
+//
 //   mkdir -p out && MAKEFUN_OUTPUT_DIR=out node main.ts
-// In the grader's sandbox MAKEFUN_OUTPUT_DIR is unset and /output is used.
-// Serve the guide while developing with: node serve.ts  (http://localhost:8080)
+//
+// Determinism: run it twice into two different output directories and
+// diff them — the two trees must be byte-identical before the entry is
+// handed over. (Verified in-session: two runs, diff -r clean.)
+//
+// Run from this file's own directory. Node standard library only, apart
+// from the vendored buildDossier import below.
 
 import { cpSync, existsSync, mkdirSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
@@ -28,9 +34,8 @@ if (existsSync(join(here, 'screenshots'))) {
   cpSync(join(here, 'screenshots'), join(out, 'screenshots'), { recursive: true });
 }
 
-// The caps mirror the scorer's gate: at most 4 screenshots of at most 256 KiB each,
-// at most 993 files and 48 MiB under app/. Passing them here makes this program fail
-// exactly where the scorer would refuse the entry, instead of later.
+// Caps the scorer enforces: at most 4 screenshots of at most 256 KiB each,
+// at most 993 files and 48 MiB inside app/, and the dossier text budget.
 writeFileSync(
   join(out, 'dossier.json'),
   buildDossier(out, {
